@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>살림부 — 스마트 가계부</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#FDF8F3; --bg2:#F5EDE0; --bg3:#EDE0CF; --card:#FFFCF8;
+    --border:#E8D9C5; --text:#2C1F0E; --text2:#7A6048; --text3:#B09878;
+    --accent:#C17A3A; --accent2:#E8A86B; --accent3:#F5CFA0;
+    --danger:#C4483A; --danger-bg:#FDF0EE;
+    --success:#4A8C5C; --success-bg:#EEF7F1;
+    --touch:44px;
+    --safe-b:env(safe-area-inset-bottom,0px);
+    --safe-t:env(safe-area-inset-top,0px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overscroll-behavior:none}
+  body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);
+       min-height:100vh;overflow-x:hidden;-webkit-text-size-adjust:100%}
+
+  /* ── LAYOUT ── */
+  .app-shell{display:flex;min-height:100vh;min-height:-webkit-fill-available}
+
+  /* ── SIDEBAR ── */
+  .sidebar{width:220px;background:var(--text);display:flex;flex-direction:column;
+           position:fixed;height:100vh;height:-webkit-fill-available;z-index:100;
+           padding-bottom:var(--safe-b)}
+  .sidebar-logo{padding:28px 24px 20px;padding-top:calc(28px + var(--safe-t));
+                border-bottom:1px solid rgba(255,255,255,.08)}
+  .sidebar-logo h1{font-family:'Gowun Batang',serif;font-size:22px;color:var(--accent3);letter-spacing:2px}
+  .sidebar-logo p{font-size:12px;color:var(--text3);margin-top:2px;letter-spacing:1px}
+  .sidebar-nav{padding:16px 0;flex:1;overflow-y:auto}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:0 24px;
+            height:var(--touch);color:rgba(255,255,255,.5);cursor:pointer;
+            transition:background .2s,color .2s;font-size:14px;font-weight:400;
+            border-left:3px solid transparent;user-select:none}
+  .nav-item.active{color:var(--accent3);border-left-color:var(--accent);
+                   background:rgba(193,122,58,.1);font-weight:500}
+  .nav-item .icon{font-size:18px;width:24px;text-align:center;flex-shrink:0}
+  .sidebar-data{border-top:1px solid rgba(255,255,255,.08);
+                padding:14px 14px calc(14px + var(--safe-b))}
+  .sidebar-data-title{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:8px}
+  .sidebar-data-btn{display:flex;align-items:center;gap:8px;width:100%;
+                    padding:0 12px;height:var(--touch);border-radius:9px;
+                    border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);
+                    color:rgba(255,255,255,.7);font-size:13px;
+                    font-family:'Noto Sans KR',sans-serif;cursor:pointer;
+                    margin-bottom:6px;transition:background .2s}
+  .sidebar-data-divider{height:1px;background:rgba(255,255,255,.08);margin:8px 0}
+  .sidebar-data-btn.reset-btn{border-color:rgba(196,72,58,.4);background:rgba(196,72,58,.1);
+                               color:rgba(255,160,150,.85)}
+
+  /* ── MAIN ── */
+  .main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-width:0}
+  .topbar{background:var(--card);border-bottom:1px solid var(--border);
+          padding:0 32px;height:60px;display:flex;align-items:center;
+          justify-content:space-between;position:sticky;top:0;z-index:50;
+          padding-top:var(--safe-t)}
+  .topbar h2{font-family:'Gowun Batang',serif;font-size:20px;color:var(--text);font-weight:400}
+  .topbar-right{display:flex;align-items:center;gap:12px}
+
+  /* ── BUTTONS ── */
+  .btn{padding:0 18px;height:var(--touch);border-radius:10px;border:none;
+       cursor:pointer;font-size:14px;font-weight:500;
+       font-family:'Noto Sans KR',sans-serif;transition:background .2s,transform .1s;
+       display:inline-flex;align-items:center;justify-content:center;
+       gap:6px;user-select:none;white-space:nowrap}
+  .btn:active{transform:scale(.97)}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-ghost{background:transparent;color:var(--text2);border:1.5px solid var(--border)}
+  .btn-danger{background:var(--danger-bg);color:var(--danger);border:1.5px solid #f0c0bb}
+  .btn-sm{height:40px;padding:0 14px;font-size:13px;border-radius:9px}
+  .btn-full{width:100%;height:52px;font-size:15px;border-radius:12px}
+
+  /* hover — only real pointer devices */
+  @media(hover:hover){
+    .nav-item:hover{color:rgba(255,255,255,.9);background:rgba(255,255,255,.05)}
+    .sidebar-data-btn:hover{background:rgba(255,255,255,.1)}
+    .sidebar-data-btn.reset-btn:hover{background:rgba(196,72,58,.2)}
+    .btn-primary:hover{background:#a8672e}
+    .btn-ghost:hover{background:var(--bg2)}
+    .btn-analyze:hover{background:#a8672e}
+    .sug-chip:hover{background:var(--accent3);border-color:var(--accent)}
+    .cat-chip:hover{border-color:var(--accent3)}
+    .tx-item:hover{background:var(--bg2)}
+  }
+
+  /* ── CONTENT ── */
+  .content{padding:24px 28px;flex:1;padding-bottom:calc(24px + var(--safe-b))}
+
+  /* ── CARDS ── */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px}
+  .card-title{font-family:'Gowun Batang',serif;font-size:15px;color:var(--text2);
+              margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+  /* ── DASHBOARD ── */
+  .dashboard-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 22px}
+  .stat-label{font-size:12px;color:var(--text3);letter-spacing:.5px;margin-bottom:8px}
+  .stat-value{font-family:'Gowun Batang',serif;font-size:28px;color:var(--text);font-weight:700}
+  .stat-sub{font-size:12px;color:var(--text3);margin-top:4px}
+  .stat-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;
+              padding:3px 10px;border-radius:20px;margin-top:6px}
+  .badge-danger{background:var(--danger-bg);color:var(--danger)}
+  .badge-success{background:var(--success-bg);color:var(--success)}
+  .progress-bar{height:6px;background:var(--bg3);border-radius:3px;margin-top:12px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:3px;transition:width .6s ease}
+  .dashboard-bottom{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;margin-bottom:18px}
+  .dashboard-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+
+  /* ── CHARTS ── */
+  .donut-wrap{position:relative;width:160px;height:160px;margin:0 auto 16px}
+  canvas{display:block}
+  .donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                text-align:center;pointer-events:none}
+  .donut-center .dc-val{font-family:'Gowun Batang',serif;font-size:20px;color:var(--text);font-weight:700}
+  .donut-center .dc-label{font-size:11px;color:var(--text3)}
+  .legend-list{list-style:none}
+  .legend-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:13px}
+  .legend-dot{width:9px;height:9px;border-radius:50%;margin-right:7px;flex-shrink:0}
+  .legend-left{display:flex;align-items:center}
+  .legend-pct{font-size:12px;color:var(--text3)}
+  .bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding:0 4px}
+  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+           height:100%;justify-content:flex-end}
+  .bar-fill{width:100%;border-radius:5px 5px 0 0;transition:height .6s ease;min-height:4px;cursor:pointer}
+  .bar-label{font-size:11px;color:var(--text3)}
+  .bar-val{font-size:11px;color:var(--text2);white-space:nowrap}
+
+  /* ── TRANSACTIONS ── */
+  .tx-list{list-style:none}
+  .tx-item{display:flex;align-items:center;gap:12px;padding:12px 8px;
+           border-bottom:1px solid var(--border);cursor:pointer;
+           transition:background .15s;border-radius:8px;min-height:var(--touch)}
+  .tx-item:last-child{border-bottom:none}
+  .tx-icon{width:40px;height:40px;border-radius:11px;display:flex;
+           align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .tx-info{flex:1;min-width:0}
+  .tx-name{font-size:14px;font-weight:500;color:var(--text)}
+  .tx-meta{font-size:12px;color:var(--text3);margin-top:2px}
+  .tx-amount{font-family:'Gowun Batang',serif;font-size:15px;font-weight:700;
+             color:var(--text);white-space:nowrap}
+  .cat-tag{display:inline-block;font-size:11px;padding:2px 7px;
+           border-radius:5px;margin-left:5px}
+
+  /* ── AI ── */
+  .ai-panel{background:linear-gradient(135deg,#2C1F0E 0%,#4A3420 100%);
+            border-radius:16px;padding:22px;color:#fff;
+            position:relative;overflow:hidden;margin-bottom:18px}
+  .ai-panel::before{content:'';position:absolute;top:-40px;right:-40px;
+                    width:160px;height:160px;border-radius:50%;
+                    background:rgba(193,122,58,.15)}
+  .ai-panel-header{display:flex;align-items:center;gap:10px;
+                   margin-bottom:18px;flex-wrap:wrap}
+  .ai-badge{background:var(--accent);color:#fff;font-size:11px;font-weight:700;
+            letter-spacing:1px;padding:4px 9px;border-radius:5px}
+  .ai-panel-header h3{font-family:'Gowun Batang',serif;font-size:17px;color:var(--accent3)}
+  .ai-sections{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .ai-section{background:rgba(255,255,255,.06);border-radius:12px;padding:16px}
+  .ai-section-title{font-size:12px;letter-spacing:.8px;color:rgba(255,255,255,.5);
+                    margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  .ai-text{font-size:13px;line-height:1.7;color:rgba(255,255,255,.85)}
+  .ai-alert{background:rgba(196,72,58,.2);border:1px solid rgba(196,72,58,.4);
+            border-radius:8px;padding:10px 12px;margin-bottom:8px;
+            font-size:13px;color:#ffb3ae;line-height:1.5}
+  .ai-tip{background:rgba(74,140,92,.2);border:1px solid rgba(74,140,92,.4);
+          border-radius:8px;padding:10px 12px;margin-bottom:8px;
+          font-size:13px;color:#a8e0b8;line-height:1.5}
+  .ai-loading{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.5);font-size:13px}
+  .dots span{animation:blink 1.2s infinite}
+  .dots span:nth-child(2){animation-delay:.2s}
+  .dots span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+  .btn-analyze{background:var(--accent);color:#fff;border:none;padding:0 16px;
+               height:40px;border-radius:9px;font-size:13px;font-weight:600;
+               cursor:pointer;font-family:'Noto Sans KR',sans-serif;
+               display:inline-flex;align-items:center;gap:6px;
+               transition:background .2s;margin-left:auto;white-space:nowrap}
+
+  /* ── MODAL ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);
+                 display:flex;align-items:center;justify-content:center;
+                 z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;padding:20px}
+  .modal-overlay.open{opacity:1;pointer-events:all}
+  .modal{background:var(--card);border-radius:22px;padding:30px;
+         width:520px;max-width:100%;max-height:88vh;overflow-y:auto;
+         transform:translateY(20px);transition:transform .25s;
+         box-shadow:0 24px 64px rgba(0,0,0,.25);
+         -webkit-overflow-scrolling:touch}
+  .modal-overlay.open .modal{transform:translateY(0)}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+  .modal-title{font-family:'Gowun Batang',serif;font-size:20px;color:var(--text)}
+  .modal-close{width:var(--touch);height:var(--touch);display:flex;
+               align-items:center;justify-content:center;border-radius:50%;
+               border:none;background:var(--bg2);font-size:16px;
+               cursor:pointer;color:var(--text3);flex-shrink:0}
+
+  /* ── CUSTOM DIALOG ── */
+  .dialog-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);
+                  display:flex;align-items:center;justify-content:center;
+                  z-index:300;opacity:0;pointer-events:none;
+                  transition:opacity .15s;padding:20px}
+  .dialog-overlay.open{opacity:1;pointer-events:all}
+  .dialog{background:var(--card);border-radius:20px;padding:28px 28px 22px;
+          width:360px;max-width:100%;
+          box-shadow:0 20px 60px rgba(0,0,0,.3);
+          transform:scale(.95);transition:transform .15s}
+  .dialog-overlay.open .dialog{transform:scale(1)}
+  .dialog-icon{font-size:32px;text-align:center;margin-bottom:12px}
+  .dialog-title{font-family:'Gowun Batang',serif;font-size:18px;color:var(--text);text-align:center;margin-bottom:8px}
+  .dialog-message{font-size:14px;color:var(--text2);text-align:center;line-height:1.65;
+                  margin-bottom:24px;white-space:pre-line}
+  .dialog-btns{display:flex;gap:10px}
+  .dialog-btns .btn{flex:1}
+
+  /* ── TOAST ── */
+  .toast{position:fixed;bottom:calc(32px + var(--safe-b));left:50%;
+         transform:translateX(-50%) translateY(20px);
+         background:var(--text);color:#fff;padding:12px 22px;border-radius:40px;
+         font-size:14px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2);
+         z-index:400;opacity:0;pointer-events:none;
+         transition:opacity .25s,transform .25s;white-space:nowrap;
+         display:flex;align-items:center;gap:8px}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ── FORM ── */
+  .form-group{margin-bottom:18px}
+  .form-label{font-size:13px;color:var(--text2);font-weight:500;
+              margin-bottom:7px;display:block}
+  .form-input{width:100%;padding:13px 15px;border:1.5px solid var(--border);
+              border-radius:11px;font-size:15px;
+              font-family:'Noto Sans KR',sans-serif;
+              background:var(--bg);color:var(--text);
+              transition:border-color .2s;outline:none;
+              min-height:var(--touch);
+              -webkit-appearance:none;appearance:none}
+  .form-input:focus{border-color:var(--accent)}
+  .amount-input{font-family:'Gowun Batang',serif;font-size:26px;text-align:right}
+  .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .cat-chip{padding:10px 4px;border-radius:12px;border:2px solid var(--border);
+            cursor:pointer;text-align:center;transition:border-color .15s,background .15s;
+            background:var(--bg);min-height:var(--touch);
+            display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .cat-chip.selected{border-color:var(--accent);background:var(--accent3)}
+  .cat-chip .emoji{font-size:22px;display:block}
+  .cat-chip .cname{font-size:11px;color:var(--text2);margin-top:3px}
+  .suggestion-bar{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .sug-chip{padding:0 13px;height:38px;background:var(--bg2);border-radius:20px;
+            font-size:13px;cursor:pointer;color:var(--text2);
+            border:1px solid var(--border);transition:background .15s;
+            display:inline-flex;align-items:center}
+
+  /* ── RECURRING ── */
+  .recurring-list{list-style:none}
+  .recurring-item{display:flex;align-items:center;gap:12px;padding:14px 16px;
+                  background:var(--bg);border-radius:13px;margin-bottom:10px;
+                  border:1px solid var(--border);min-height:72px}
+  .recurring-info{flex:1;min-width:0}
+  .recurring-name{font-size:15px;font-weight:500}
+  .recurring-meta{font-size:12px;color:var(--text3);margin-top:3px}
+  .recurring-amount{font-family:'Gowun Batang',serif;font-size:17px;
+                    font-weight:700;white-space:nowrap}
+  .status-badge{font-size:11px;padding:3px 9px;border-radius:20px}
+  .status-active{background:var(--success-bg);color:var(--success)}
+  .status-paused{background:var(--bg3);color:var(--text3)}
+
+  /* ── PERIOD TABS ── */
+  .period-tabs{display:flex;gap:4px;background:var(--bg2);padding:4px;
+               border-radius:12px;margin-bottom:20px;flex-wrap:wrap}
+  .period-tab{padding:0 16px;height:40px;border-radius:9px;font-size:13px;
+              cursor:pointer;color:var(--text3);transition:all .15s;font-weight:500;
+              display:flex;align-items:center;min-width:64px;justify-content:center}
+  .period-tab.active{background:var(--card);color:var(--text);
+                     box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+  /* ── HEATMAP ── */
+  .heatmap{display:grid;grid-template-columns:44px repeat(7,1fr);gap:4px}
+  .heatmap-cell{height:32px;border-radius:5px;display:flex;align-items:center;
+                justify-content:center;font-size:12px}
+  .heatmap-label{color:var(--text3);font-size:12px;display:flex;align-items:center}
+
+  /* ── PAGES ── */
+  .page{display:none}
+  .page.active{display:block;animation:fadeIn .22s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ── RESET OPTIONS ── */
+  .reset-option-btn{display:flex;align-items:center;gap:14px;width:100%;
+                    padding:14px 16px;border-radius:13px;border:1.5px solid var(--border);
+                    background:var(--bg);cursor:pointer;text-align:left;
+                    transition:border-color .15s,background .15s;min-height:68px}
+  .reset-option-btn:active{transform:scale(.98)}
+  @media(hover:hover){.reset-option-btn:hover{border-color:var(--danger);background:var(--danger-bg)}}
+  .reset-option-icon{font-size:26px;flex-shrink:0;width:36px;text-align:center}
+  .reset-option-text{flex:1}
+  .reset-option-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+  .reset-option-desc{font-size:12px;color:var(--text3);line-height:1.5}
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+  /* ── RESPONSIVE (iPad portrait ≈ 768px, main area = 548px) ── */
+  @media(max-width:960px){
+    .sidebar{width:64px}
+    .sidebar-logo{padding:18px 0;text-align:center}
+    .sidebar-logo h1{font-size:13px;letter-spacing:0}
+    .sidebar-logo p{display:none}
+    .nav-item{padding:0;justify-content:center}
+    .nav-item span:not(.icon){display:none}
+    .nav-item .icon{width:auto;font-size:22px}
+    .sidebar-data{padding:10px 6px calc(10px + var(--safe-b))}
+    .sidebar-data-title{display:none}
+    .sidebar-data-btn{justify-content:center;padding:0}
+    .sidebar-data-btn span:last-child{display:none}
+    .main{margin-left:64px}
+    .dashboard-grid{grid-template-columns:1fr 1fr}
+    .dashboard-bottom{grid-template-columns:1fr}
+    .dashboard-row{grid-template-columns:1fr}
+    .ai-sections{grid-template-columns:1fr}
+    .content{padding:18px 16px calc(18px + var(--safe-b))}
+    .topbar{padding:0 16px}
+  }
+  @media(max-width:600px){
+    .dashboard-grid{grid-template-columns:1fr}
+    .cat-grid{grid-template-columns:repeat(3,1fr)}
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo"><h1>살림부</h1><p>SMART BUDGET</p></div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="goPage('dashboard')"><span class="icon">🏠</span><span>대시보드</span></div>
+      <div class="nav-item" onclick="goPage('input')"><span class="icon">✏️</span><span>지출 입력</span></div>
+      <div class="nav-item" onclick="goPage('stats')"><span class="icon">📊</span><span>지출 현황</span></div>
+      <div class="nav-item" onclick="goPage('recurring')"><span class="icon">🔄</span><span>정기 지출</span></div>
+      <div class="nav-item" onclick="goPage('ai')"><span class="icon">🤖</span><span>AI 분석</span></div>
+    </nav>
+    <div class="sidebar-data">
+      <div class="sidebar-data-title">데이터 관리</div>
+      <button class="sidebar-data-btn" onclick="exportJSON()"><span>⬆️</span><span>백업 내보내기</span></button>
+      <button class="sidebar-data-btn" onclick="triggerImport()"><span>⬇️</span><span>백업 가져오기</span></button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
+      <div class="sidebar-data-divider"></div>
+      <button class="sidebar-data-btn reset-btn" onclick="openResetDialog()"><span>🗑️</span><span>데이터 초기화</span></button>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══ -->
+  <main class="main">
+    <header class="topbar">
+      <h2 id="page-title">이번 달 대시보드</h2>
+      <div class="topbar-right">
+        <span style="font-size:13px;color:var(--text3)" id="topbar-date"></span>
+        <button class="btn btn-primary" onclick="openInputModal()">＋ 지출 입력</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ══ PAGE: DASHBOARD ══ -->
+      <div class="page active" id="page-dashboard">
+        <div class="dashboard-grid">
+          <div class="stat-card">
+            <div class="stat-label">이번 달 총 지출</div>
+            <div class="stat-value" id="dash-total">₩0</div>
+            <div class="progress-bar"><div class="progress-fill" id="dash-bar" style="width:0%;background:var(--accent)"></div></div>
+            <div class="stat-sub" id="dash-budget-sub">예산 ₩1,200,000</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">지난 달 대비</div>
+            <div class="stat-value">+12.4%</div>
+            <div class="stat-badge badge-danger">▲ ₩92,800 증가</div>
+            <div class="stat-sub" style="margin-top:6px">지난 달: ₩749,700</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">이번 달 지출 건수</div>
+            <div class="stat-value" id="dash-count">0건</div>
+            <div class="stat-badge badge-success" id="dash-rec-badge">✓ 정기지출 포함</div>
+            <div class="stat-sub" id="dash-avg" style="margin-top:6px">일 평균 계산 중</div>
+          </div>
+        </div>
+
+        <div class="ai-panel">
+          <div class="ai-panel-header">
+            <span class="ai-badge">AI</span>
+            <h3>이번 달 살림 분석</h3>
+            <button class="btn-analyze" onclick="goPage('ai')">자세히 보기 →</button>
+          </div>
+          <div class="ai-sections">
+            <div class="ai-section">
+              <div class="ai-section-title">📋 종합 요약</div>
+              <div class="ai-text">외식비가 전체의 28%로 가장 높고, 의류·미용 지출이 증가했어요. 교통비는 안정적입니다.</div>
+            </div>
+            <div class="ai-section">
+              <div class="ai-section-title">⚠️ 주의 항목</div>
+              <div class="ai-alert">💄 미용 ₩42,000 — 예산 대비 빈번한 소비</div>
+              <div class="ai-alert">🍽️ 외식 ₩237,000 — 예산의 118%</div>
+            </div>
+            <div class="ai-section">
+              <div class="ai-section-title">💡 절약 제안</div>
+              <div class="ai-tip">올리브영 방문 전 목록 작성으로 충동구매 줄이기</div>
+              <div class="ai-tip">배달 대신 밀키트 활용 시 월 ₩40,000 절감</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-bottom">
+          <div class="card">
+            <div class="card-title">📅 일별 지출</div>
+            <div id="bar-chart-wrap"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">🥧 카테고리별 지출</div>
+            <div class="donut-wrap">
+              <canvas id="donut-canvas" width="160" height="160"></canvas>
+              <div class="donut-center">
+                <div class="dc-val" id="donut-total">₩0</div>
+                <div class="dc-label">총 지출</div>
+              </div>
+            </div>
+            <ul class="legend-list" id="donut-legend"></ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🕐 최근 지출 내역</div>
+          <ul class="tx-list" id="tx-list-home"></ul>
+        </div>
+      </div>
+
+      <!-- ══ PAGE: INPUT ══ -->
+      <div class="page" id="page-input">
+        <div style="max-width:580px;margin:0 auto">
+          <div class="card">
+            <div class="card-title">✏️ 지출 입력</div>
+            <div class="form-group">
+              <label class="form-label">금액</label>
+              <input type="number" inputmode="numeric" class="form-input amount-input" id="inp-amount" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">항목명</label>
+              <input type="text" class="form-input" id="inp-name" placeholder="이마트, 병원비, 헌금..." oninput="onNameInput(this.value,'cat-grid','sug-bar')">
+              <div class="suggestion-bar" id="sug-bar"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">카테고리 <span style="color:var(--text3);font-weight:400">(자동 선택)</span></label>
+              <div class="cat-grid" id="cat-grid"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">날짜</label>
+              <input type="date" class="form-input" id="inp-date">
+            </div>
+            <div class="form-group">
+              <label class="form-label">메모 (선택)</label>
+              <input type="text" class="form-input" id="inp-memo" placeholder="메모를 입력하세요">
+            </div>
+            <button class="btn btn-primary btn-full" onclick="saveExpense()">저장하기</button>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <div class="card-title">📋 오늘 입력한 지출</div>
+            <ul class="tx-list" id="today-list"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PAGE: STATS ══ -->
+      <div class="page" id="page-stats">
+        <div class="period-tabs">
+          <div class="period-tab active" onclick="setPeriod('week',this)">이번 주</div>
+          <div class="period-tab" onclick="setPeriod('month',this)">이번 달</div>
+          <div class="period-tab" onclick="setPeriod('last',this)">지난 달</div>
+          <div class="period-tab" onclick="setPeriod('quarter',this)">3개월</div>
+          <div class="period-tab" onclick="setPeriod('year',this)">올해</div>
+        </div>
+        <div class="dashboard-row">
+          <div class="card">
+            <div class="card-title">📊 기간별 지출 추이</div>
+            <div id="stats-bar-wrap"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">🥧 카테고리 비율</div>
+            <div class="donut-wrap">
+              <canvas id="donut-stats" width="160" height="160"></canvas>
+              <div class="donut-center">
+                <div class="dc-val" id="stats-total">₩0</div>
+                <div class="dc-label">총 지출</div>
+              </div>
+            </div>
+            <ul class="legend-list" id="donut-stats-legend"></ul>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-title">📈 월별 지출 트렌드</div>
+          <canvas id="line-chart" height="80"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">🗓️ 요일별 지출 히트맵</div>
+          <div id="heatmap-wrap" style="overflow-x:auto;padding:8px 0"></div>
+        </div>
+      </div>
+
+      <!-- ══ PAGE: RECURRING ══ -->
+      <div class="page" id="page-recurring">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+          <div style="font-size:14px;color:var(--text2)">이달 정기지출 합계: <strong style="color:var(--accent);font-family:'Gowun Batang',serif" id="recurring-total">₩0</strong></div>
+          <button class="btn btn-primary" onclick="openRecurringModal()">＋ 정기 지출 등록</button>
+        </div>
+        <ul class="recurring-list" id="recurring-list"></ul>
+      </div>
+
+      <!-- ══ PAGE: AI ══ -->
+      <div class="page" id="page-ai">
+        <div class="ai-panel" style="margin-bottom:18px">
+          <div class="ai-panel-header">
+            <span class="ai-badge">AI</span>
+            <h3>살림 AI 전문 분석</h3>
+            <button class="btn-analyze" id="ai-analyze-btn" onclick="runAIAnalysis()">✨ 분석 실행</button>
+          </div>
+          <div class="ai-sections">
+            <div class="ai-section">
+              <div class="ai-section-title">📋 종합 요약</div>
+              <div class="ai-text" id="ai-summary">분석 버튼을 눌러 시작하세요.</div>
+            </div>
+            <div class="ai-section">
+              <div class="ai-section-title">⚠️ 과도한 지출 경고</div>
+              <div id="ai-warnings"><div class="ai-text" style="opacity:.5">분석 전</div></div>
+            </div>
+            <div class="ai-section">
+              <div class="ai-section-title">💡 절약 &amp; 합리화 제안</div>
+              <div id="ai-tips"><div class="ai-text" style="opacity:.5">분석 전</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="dashboard-row">
+          <div class="card">
+            <div class="card-title">📊 카테고리별 예산 vs 실제</div>
+            <div id="budget-compare-wrap"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">📅 요일별 지출 패턴</div>
+            <div id="weekly-pattern-wrap"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🧾 전체 지출 내역</div>
+          <ul class="tx-list" id="all-tx-list"></ul>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div><!-- /app-shell -->
+
+<!-- ══ MODAL: INPUT ══ -->
+<div class="modal-overlay" id="input-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">지출 입력</div>
+      <button class="modal-close" onclick="closeModal('input-modal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">금액</label>
+      <input type="number" inputmode="numeric" class="form-input amount-input" id="m-amount" placeholder="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">항목명</label>
+      <input type="text" class="form-input" id="m-name" placeholder="이마트, 병원비..." oninput="onNameInput(this.value,'m-cat-grid','m-sug-bar')">
+      <div class="suggestion-bar" id="m-sug-bar"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">카테고리</label>
+      <div class="cat-grid" id="m-cat-grid"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">날짜</label>
+      <input type="date" class="form-input" id="m-date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">메모</label>
+      <input type="text" class="form-input" id="m-memo" placeholder="메모">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveModalExpense()">저장</button>
+  </div>
+</div>
+
+<!-- ══ MODAL: RECURRING ══ -->
+<div class="modal-overlay" id="recurring-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">정기 지출 등록</div>
+      <button class="modal-close" onclick="closeModal('recurring-modal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">항목명</label>
+      <input type="text" class="form-input" id="r-name" placeholder="넷플릭스, 헬스장...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">금액</label>
+      <input type="number" inputmode="numeric" class="form-input" id="r-amount" placeholder="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">카테고리</label>
+      <div class="cat-grid" id="r-cat-grid"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">결제일</label>
+      <input type="number" inputmode="numeric" class="form-input" id="r-day" min="1" max="31" placeholder="매월 몇 일?">
+    </div>
+    <div class="form-group">
+      <label class="form-label">반복 주기</label>
+      <select class="form-input" id="r-cycle">
+        <option value="monthly">매월</option>
+        <option value="weekly">매주</option>
+        <option value="yearly">매년</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveRecurring()">등록</button>
+  </div>
+</div>
+
+<!-- ══ CUSTOM DIALOG ══ -->
+<div class="dialog-overlay" id="custom-dialog">
+  <div class="dialog">
+    <div class="dialog-icon" id="dialog-icon">⚠️</div>
+    <div class="dialog-title" id="dialog-title">확인</div>
+    <div class="dialog-message" id="dialog-message"></div>
+    <div class="dialog-btns" id="dialog-btns"></div>
+  </div>
+</div>
+
+<!-- ══ RESET MODAL ══ -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--danger)">🗑️ 데이터 초기화</div>
+      <button class="modal-close" onclick="closeModal('reset-modal')">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:20px">
+      초기화할 범위를 선택하세요.<br>
+      <strong style="color:var(--danger)">삭제된 데이터는 복구할 수 없습니다.</strong>
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px">
+      <button class="reset-option-btn" onclick="confirmReset('tx')">
+        <span class="reset-option-icon">📋</span>
+        <div class="reset-option-text">
+          <div class="reset-option-title">지출 내역만 초기화</div>
+          <div class="reset-option-desc">정기지출 등록 정보는 유지, 거래 내역만 삭제</div>
+        </div>
+      </button>
+      <button class="reset-option-btn" onclick="confirmReset('all')">
+        <span class="reset-option-icon">💥</span>
+        <div class="reset-option-text">
+          <div class="reset-option-title">전체 초기화</div>
+          <div class="reset-option-desc">지출 내역 + 정기지출 등록 정보 모두 삭제</div>
+        </div>
+      </button>
+      <button class="reset-option-btn" onclick="confirmReset('seed')">
+        <span class="reset-option-icon">🔄</span>
+        <div class="reset-option-text">
+          <div class="reset-option-title">샘플 데이터로 리셋</div>
+          <div class="reset-option-desc">현재 데이터를 지우고 앱 기본 예시 데이터로 되돌리기</div>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════
+// CATEGORIES
+// ═══════════════════════════
+const CATEGORIES = [
+  { id:'food',     emoji:'🍽️', name:'외식',   color:'#C17A3A', bg:'#FDF0E0', keywords:['식당','배달','배민','쿠팡이츠','점심','저녁','버거','피자'] },
+  { id:'grocery',  emoji:'🛒', name:'식료품', color:'#6B9E6B', bg:'#EEF7EE', keywords:['마트','이마트','홈플러스','쿠팡','편의점','장'] },
+  { id:'clothing', emoji:'👔', name:'의류',   color:'#7A8BC1', bg:'#EEF0F7', keywords:['옷','셔츠','바지','원피스','자켓','코트','유니클로','자라'] },
+  { id:'beauty',   emoji:'💄', name:'미용',   color:'#C16B9E', bg:'#F7EEF4', keywords:['미용실','헤어','네일','피부','화장품','올리브영','세럼'] },
+  { id:'offering', emoji:'🙏', name:'봉헌',   color:'#C1A03A', bg:'#F7F3EE', keywords:['헌금','봉헌','십일조','교회','성당','절','사찰'] },
+  { id:'transport',emoji:'🚗', name:'교통',   color:'#6B9EC1', bg:'#EEF2F7', keywords:['버스','지하철','택시','주유','카카오택시','주차'] },
+  { id:'health',   emoji:'💊', name:'의료',   color:'#C14A8B', bg:'#F7EEF5', keywords:['병원','약국','약','진료','치과','피부과'] },
+  { id:'edu',      emoji:'📚', name:'교육',   color:'#7A6BC1', bg:'#F2EEF7', keywords:['학원','교재','책','강의','인강'] },
+  { id:'sub',      emoji:'📺', name:'구독',   color:'#C1B56B', bg:'#F7F4EE', keywords:['넷플릭스','유튜브','왓챠','멜론','구독','애플'] },
+  { id:'shopping', emoji:'🛍️', name:'쇼핑',  color:'#9E6B9E', bg:'#F4EEF7', keywords:['무신사','아마존','백화점','마켓'] },
+  { id:'etc',      emoji:'📦', name:'기타',   color:'#9E9E9E', bg:'#F2F2F2', keywords:[] },
+];
+
+const SEED_TX = [
+  {id:1, date:'2025-02-18',name:'스타벅스',   amount:5800, cat:'food',     memo:''},
+  {id:2, date:'2025-02-18',name:'이마트',      amount:87000,cat:'grocery',  memo:'장보기'},
+  {id:3, date:'2025-02-17',name:'배달의민족',  amount:25000,cat:'food',     memo:'저녁'},
+  {id:4, date:'2025-02-17',name:'카카오택시',  amount:12300,cat:'transport',memo:''},
+  {id:5, date:'2025-02-16',name:'넷플릭스',    amount:17000,cat:'sub',      memo:'정기결제'},
+  {id:6, date:'2025-02-16',name:'올리브영',    amount:42000,cat:'beauty',   memo:'스킨케어'},
+  {id:7, date:'2025-02-15',name:'GS25',        amount:6700, cat:'grocery',  memo:'간식'},
+  {id:8, date:'2025-02-14',name:'병원',        amount:32000,cat:'health',   memo:'내과'},
+  {id:9, date:'2025-02-13',name:'버거킹',      amount:18000,cat:'food',     memo:'외식'},
+  {id:10,date:'2025-02-12',name:'홈플러스',    amount:62000,cat:'grocery',  memo:'주간장보기'},
+  {id:11,date:'2025-02-11',name:'무신사',      amount:89000,cat:'clothing', memo:'청바지'},
+  {id:12,date:'2025-02-10',name:'지하철',      amount:5600, cat:'transport',memo:'교통'},
+  {id:13,date:'2025-02-09',name:'주일헌금',    amount:50000,cat:'offering', memo:'봉헌'},
+  {id:14,date:'2025-02-08',name:'쿠팡이츠',    amount:32000,cat:'food',     memo:'피자'},
+  {id:15,date:'2025-02-07',name:'약국',        amount:15000,cat:'health',   memo:'약'},
+];
+
+const SEED_REC = [
+  {id:1,name:'넷플릭스',       amount:17000, cat:'sub',    day:16,cycle:'monthly',status:'active'},
+  {id:2,name:'헬스장',         amount:60000, cat:'health', day:1, cycle:'monthly',status:'active'},
+  {id:3,name:'유튜브 프리미엄',amount:14900, cat:'sub',    day:20,cycle:'monthly',status:'active'},
+  {id:4,name:'아파트 관리비',  amount:180000,cat:'etc',    day:25,cycle:'monthly',status:'active'},
+  {id:5,name:'독서 모임',      amount:15000, cat:'edu',    day:10,cycle:'monthly',status:'paused'},
+  {id:6,name:'멜론',           amount:10900, cat:'sub',    day:5, cycle:'monthly',status:'active'},
+];
+
+// ═══════════════════════════
+// LOCALSTORAGE
+// ═══════════════════════════
+function loadLS(key, fallback) {
+  try { const r=localStorage.getItem(key); return r?JSON.parse(r):fallback; }
+  catch { return fallback; }
+}
+function saveLS(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){}
+}
+
+let transactions  = loadLS('sarim_tx',  SEED_TX);
+let recurringList = loadLS('sarim_rec', SEED_REC);
+let selectedCat   = 'etc';
+let nextId = Math.max(...transactions.map(t=>t.id), ...recurringList.map(r=>r.id), 99) + 1;
+
+function saveTx()  { saveLS('sarim_tx',  transactions);  }
+function saveRec() { saveLS('sarim_rec', recurringList); }
+
+// ═══════════════════════════
+// RESET
+// ═══════════════════════════
+function openResetDialog() { openModal('reset-modal'); }
+
+function confirmReset(type) {
+  closeModal('reset-modal');
+
+  const labels = {
+    tx:   { icon:'📋', title:'지출 내역 초기화', msg:'지출 내역 전체를 삭제합니다.\n정기지출 등록 정보는 유지됩니다.' },
+    all:  { icon:'💥', title:'전체 초기화',       msg:'지출 내역과 정기지출 등록 정보를\n모두 삭제합니다.' },
+    seed: { icon:'🔄', title:'샘플 데이터로 리셋', msg:'현재 데이터를 모두 지우고\n앱 기본 예시 데이터로 되돌립니다.' },
+  };
+  const { icon, title, msg } = labels[type];
+
+  // Step 1 — 자동 백업 다운로드 제안
+  showDialog({
+    icon: '💾',
+    title: '먼저 백업할까요?',
+    message: '초기화 전에 현재 데이터를\n자동으로 백업 파일로 저장할 수 있어요.',
+    buttons: [
+      { label: '백업 없이 진행', style: 'ghost', action: () => doConfirmReset(type, icon, title, msg) },
+      { label: '백업 후 초기화', style: 'primary', action: () => {
+          exportJSON();
+          // 짧은 딜레이 후 2단계 확인 (다운로드 트리거 직후 바로 뜨지 않도록)
+          setTimeout(() => doConfirmReset(type, icon, title, msg), 400);
+      }},
+    ]
+  });
+}
+
+function doConfirmReset(type, icon, title, msg) {
+  // Step 2 — 최종 확인
+  showDialog({
+    icon,
+    title,
+    message: msg + '\n\n이 작업은 되돌릴 수 없어요.',
+    buttons: [
+      { label: '취소', style: 'ghost', action: () => {} },
+      { label: '초기화', style: 'danger', action: () => executeReset(type) },
+    ]
+  });
+}
+
+function executeReset(type) {
+  if (type === 'tx') {
+    transactions = [];
+    saveTx();
+    showToast('📋 지출 내역을 초기화했어요');
+  } else if (type === 'all') {
+    transactions  = [];
+    recurringList = [];
+    saveTx(); saveRec();
+    showToast('💥 전체 데이터를 초기화했어요');
+  } else if (type === 'seed') {
+    transactions  = JSON.parse(JSON.stringify(SEED_TX));
+    recurringList = JSON.parse(JSON.stringify(SEED_REC));
+    nextId = Math.max(...transactions.map(t=>t.id), ...recurringList.map(r=>r.id)) + 1;
+    saveTx(); saveRec();
+    showToast('🔄 샘플 데이터로 되돌렸어요');
+  }
+  refreshDashboard();
+}
+
+// ═══════════════════════════
+// EXPORT / IMPORT
+// ═══════════════════════════
+function exportJSON() {
+  const payload = { version:1, exportedAt:new Date().toISOString(), transactions, recurringList };
+  const blob = new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `살림부_백업_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ 백업 파일이 저장됐어요');
+}
+
+function triggerImport() { document.getElementById('import-file').click(); }
+
+function importJSON(event) {
+  const file = event.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data.transactions)) throw new Error('invalid');
+      showDialog({
+        icon:'📂', title:'데이터 가져오기',
+        message:`백업 파일 내용\n지출 ${data.transactions.length}건, 정기지출 ${data.recurringList?.length||0}건\n\n현재 데이터를 덮어쓸까요?`,
+        buttons:[
+          { label:'취소', style:'ghost',  action:()=>{} },
+          { label:'덮어쓰기', style:'danger', action:()=>{
+            transactions  = data.transactions;
+            recurringList = data.recurringList||[];
+            nextId = Math.max(...transactions.map(t=>t.id),...recurringList.map(r=>r.id),99)+1;
+            saveTx(); saveRec();
+            refreshDashboard();
+            showToast('✅ 데이터를 불러왔어요');
+          }},
+        ]
+      });
+    } catch {
+      showDialog({icon:'❌',title:'가져오기 실패',message:'올바른 살림부 백업 파일이 아니에요.',
+                  buttons:[{label:'확인',style:'primary',action:()=>{}}]});
+    }
+  };
+  reader.readAsText(file);
+  event.target.value='';
+}
+
+// ═══════════════════════════
+// CUSTOM DIALOG
+// ═══════════════════════════
+function showDialog({icon='⚠️',title='',message='',buttons=[]}) {
+  document.getElementById('dialog-icon').textContent    = icon;
+  document.getElementById('dialog-title').textContent   = title;
+  document.getElementById('dialog-message').textContent = message;
+  const btns = document.getElementById('dialog-btns');
+  btns.innerHTML = '';
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = `btn btn-${b.style||'ghost'}`;
+    btn.textContent = b.label;
+    btn.onclick = ()=>{ closeDialog(); b.action(); };
+    btns.appendChild(btn);
+  });
+  document.getElementById('custom-dialog').classList.add('open');
+}
+function closeDialog() { document.getElementById('custom-dialog').classList.remove('open'); }
+
+// ═══════════════════════════
+// TOAST
+// ═══════════════════════════
+let _toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+// ═══════════════════════════
+// NAVIGATION
+// ═══════════════════════════
+const PAGE_TITLES = {
+  dashboard:'이번 달 대시보드', input:'지출 입력',
+  stats:'지출 현황', recurring:'정기 지출 관리', ai:'AI 살림 분석'
+};
+function goPage(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')?.includes(`'${page}'`)) n.classList.add('active');
+  });
+  document.getElementById('page-title').textContent = PAGE_TITLES[page]||'';
+  if(page==='dashboard') refreshDashboard();
+  if(page==='stats')     initStatsPage();
+  if(page==='recurring') renderRecurringList();
+  if(page==='ai')        renderAllTxList();
+  if(page==='input')     { initCatGrid('cat-grid'); setTodayDate(); renderTodayList(); }
+}
+
+// ═══════════════════════════
+// CATEGORIES
+// ═══════════════════════════
+function getCat(id){ return CATEGORIES.find(c=>c.id===id)||CATEGORIES[10]; }
+
+function initCatGrid(gridId, sel) {
+  const grid=document.getElementById(gridId); if(!grid) return;
+  const cur=sel||selectedCat;
+  grid.innerHTML=CATEGORIES.map(c=>`
+    <div class="cat-chip ${cur===c.id?'selected':''}" onclick="selectCat('${c.id}','${gridId}')">
+      <span class="emoji">${c.emoji}</span><span class="cname">${c.name}</span>
+    </div>`).join('');
+}
+function selectCat(id,gridId) {
+  selectedCat=id;
+  document.querySelectorAll(`#${gridId} .cat-chip`).forEach((el,i)=>{
+    el.classList.toggle('selected',CATEGORIES[i].id===id);
+  });
+}
+
+// ═══════════════════════════
+// AUTO-CLASSIFY
+// ═══════════════════════════
+const SUGG = {
+  '스':['스타벅스','스시'], '이':['이마트','이자카야'],
+  '배':['배달의민족'], '홈':['홈플러스'], '무':['무신사'], '올':['올리브영'],
+};
+function classifyName(name) {
+  const l=name.toLowerCase();
+  for(const cat of CATEGORIES){ if(cat.keywords.some(k=>l.includes(k))) return cat.id; }
+  return 'etc';
+}
+function onNameInput(val,gridId,sugBarId) {
+  const bar=document.getElementById(sugBarId); if(!bar) return;
+  if(!val){ bar.innerHTML=''; return; }
+  const sugs=(SUGG[val[0]]||[]).filter(s=>s.startsWith(val));
+  bar.innerHTML=sugs.slice(0,4).map(s=>
+    `<span class="sug-chip" onclick="selectSug('${s}','${gridId}','${sugBarId}')">${s}</span>`
+  ).join('');
+  if(val.length>=2){ const cat=classifyName(val); selectedCat=cat; initCatGrid(gridId,cat); }
+}
+function selectSug(name,gridId,sugBarId) {
+  const prefix = gridId==='m-cat-grid'?'m-':gridId==='r-cat-grid'?'r-':'inp-';
+  const ni=document.getElementById(prefix+'name');
+  if(ni) ni.value=name;
+  document.getElementById(sugBarId).innerHTML='';
+  const cat=classifyName(name); selectedCat=cat; initCatGrid(gridId,cat);
+}
+
+// ═══════════════════════════
+// SAVE EXPENSE
+// ═══════════════════════════
+function setTodayDate() {
+  const today=new Date().toISOString().split('T')[0];
+  ['inp-date','m-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
+}
+function saveExpense() {
+  const amount=parseInt(document.getElementById('inp-amount').value);
+  const name=document.getElementById('inp-name').value.trim();
+  if(!amount||!name){ showToast('⚠️ 금액과 항목명을 입력해주세요'); return; }
+  const date=document.getElementById('inp-date').value||new Date().toISOString().split('T')[0];
+  const memo=document.getElementById('inp-memo').value;
+  transactions.unshift({id:nextId++,date,name,amount,cat:selectedCat,memo});
+  saveTx();
+  ['inp-amount','inp-name','inp-memo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sug-bar').innerHTML='';
+  selectedCat='etc'; initCatGrid('cat-grid');
+  renderTodayList(); showToast('✅ 저장됐어요');
+}
+function saveModalExpense() {
+  const amount=parseInt(document.getElementById('m-amount').value);
+  const name=document.getElementById('m-name').value.trim();
+  if(!amount||!name){ showToast('⚠️ 금액과 항목명을 입력해주세요'); return; }
+  const date=document.getElementById('m-date').value||new Date().toISOString().split('T')[0];
+  const memo=document.getElementById('m-memo').value;
+  transactions.unshift({id:nextId++,date,name,amount,cat:selectedCat,memo});
+  saveTx(); closeModal('input-modal'); refreshDashboard(); showToast('✅ 저장됐어요');
+}
+
+// ═══════════════════════════
+// RENDER HELPERS
+// ═══════════════════════════
+function txItemHTML(t) {
+  const cat=getCat(t.cat);
+  return `<li class="tx-item">
+    <div class="tx-icon" style="background:${cat.bg}">${cat.emoji}</div>
+    <div class="tx-info">
+      <div class="tx-name">${t.name}<span class="cat-tag" style="background:${cat.bg};color:${cat.color}">${cat.name}</span></div>
+      <div class="tx-meta">${t.date}${t.memo?' · '+t.memo:''}</div>
+    </div>
+    <div class="tx-amount">₩${t.amount.toLocaleString()}</div>
+  </li>`;
+}
+function renderTodayList() {
+  const today=new Date().toISOString().split('T')[0];
+  const list=document.getElementById('today-list'); if(!list) return;
+  const items=transactions.filter(t=>t.date===today);
+  list.innerHTML=items.length?items.map(txItemHTML).join('')
+    :'<li style="padding:14px 8px;color:var(--text3);font-size:13px">오늘 입력한 지출이 없어요</li>';
+}
+function renderAllTxList() {
+  const list=document.getElementById('all-tx-list');
+  if(list) list.innerHTML=transactions.slice(0,30).map(txItemHTML).join('');
+}
+
+// ═══════════════════════════
+// DASHBOARD
+// ═══════════════════════════
+function refreshDashboard() {
+  const total=transactions.reduce((s,t)=>s+t.amount,0);
+  const budget=1200000;
+  const pct=Math.min((total/budget)*100,100).toFixed(0);
+  const avg=total?Math.round(total/new Date().getDate()):0;
+  const el=id=>document.getElementById(id);
+  if(el('dash-total'))      el('dash-total').textContent='₩'+total.toLocaleString();
+  if(el('dash-bar'))        el('dash-bar').style.width=pct+'%';
+  if(el('dash-budget-sub')) el('dash-budget-sub').textContent=`예산 ₩${budget.toLocaleString()} 중 ${pct}% 사용`;
+  if(el('dash-count'))      el('dash-count').textContent=transactions.length+'건';
+  if(el('dash-avg'))        el('dash-avg').textContent=`일 평균 ₩${avg.toLocaleString()}`;
+  if(el('donut-total'))     el('donut-total').textContent='₩'+(total/1000).toFixed(0)+'K';
+  drawDonut('donut-canvas','donut-legend',getDonutData());
+  drawBarChart('bar-chart-wrap',[
+    {l:'1',v:12000},{l:'4',v:87000},{l:'7',v:45000},{l:'10',v:32000},
+    {l:'13',v:78000},{l:'15',v:15000},{l:'16',v:32000},{l:'17',v:37300},
+    {l:'18',v:92800},{l:'19',v:62000},{l:'20',v:41000},{l:'21',v:30000}
+  ]);
+  document.getElementById('tx-list-home').innerHTML=transactions.slice(0,6).map(txItemHTML).join('');
+}
+
+// ═══════════════════════════
+// CHARTS
+// ═══════════════════════════
+function getDonutData() {
+  const bycat={};
+  transactions.forEach(t=>{bycat[t.cat]=(bycat[t.cat]||0)+t.amount;});
+  return Object.entries(bycat)
+    .map(([id,val])=>({label:getCat(id).name,value:val,color:getCat(id).color}))
+    .sort((a,b)=>b.value-a.value).slice(0,7);
+}
+function drawDonut(canvasId,legendId,data) {
+  const canvas=document.getElementById(canvasId); if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const total=data.reduce((s,d)=>s+d.value,0); if(!total) return;
+  let angle=-Math.PI/2;
+  ctx.clearRect(0,0,160,160);
+  data.forEach(d=>{
+    const sweep=(d.value/total)*2*Math.PI;
+    ctx.beginPath(); ctx.moveTo(80,80);
+    ctx.arc(80,80,68,angle,angle+sweep);
+    ctx.closePath(); ctx.fillStyle=d.color; ctx.fill();
+    angle+=sweep;
+  });
+  ctx.beginPath(); ctx.arc(80,80,42,0,2*Math.PI);
+  ctx.fillStyle='#FFFCF8'; ctx.fill();
+  const legend=legendId&&document.getElementById(legendId);
+  if(legend) legend.innerHTML=data.map(d=>`
+    <li class="legend-item">
+      <span class="legend-left"><span class="legend-dot" style="background:${d.color}"></span>${d.label}</span>
+      <span class="legend-pct">${((d.value/total)*100).toFixed(0)}% · ₩${(d.value/1000).toFixed(0)}K</span>
+    </li>`).join('');
+}
+function drawBarChart(wrapId,data,colors) {
+  const wrap=document.getElementById(wrapId); if(!wrap) return;
+  const max=Math.max(...data.map(d=>d.v));
+  wrap.innerHTML=`<div class="bar-chart">${data.map((d,i)=>`
+    <div class="bar-col">
+      <div class="bar-val">₩${(d.v/1000).toFixed(0)}K</div>
+      <div class="bar-fill" style="height:${(d.v/max)*100}%;background:${colors?colors[i%colors.length]:'var(--accent)'}"></div>
+      <div class="bar-label">${d.l}</div>
+    </div>`).join('')}</div>`;
+}
+function drawLineChart(canvasId,data) {
+  const canvas=document.getElementById(canvasId); if(!canvas) return;
+  canvas.width=canvas.parentElement.offsetWidth||500; canvas.height=100;
+  const ctx=canvas.getContext('2d'); const W=canvas.width,H=80;
+  const max=Math.max(...data.map(d=>d.v));
+  const pts=data.map((d,i)=>({x:40+i*(W-60)/(data.length-1),y:12+(1-d.v/max)*(H-24)}));
+  ctx.clearRect(0,0,W,H+20);
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'rgba(193,122,58,.3)'); grad.addColorStop(1,'rgba(193,122,58,0)');
+  ctx.beginPath(); ctx.moveTo(pts[0].x,H);
+  pts.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.lineTo(pts[pts.length-1].x,H); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+  pts.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle='var(--accent)'; ctx.lineWidth=2.5; ctx.stroke();
+  pts.forEach((p,i)=>{
+    ctx.beginPath(); ctx.arc(p.x,p.y,3.5,0,2*Math.PI);
+    ctx.fillStyle='var(--accent)'; ctx.fill();
+    ctx.fillStyle='var(--text3)'; ctx.font='11px Noto Sans KR'; ctx.textAlign='center';
+    ctx.fillText(data[i].l,p.x,H+16);
+    if(i===data.length-1||i===0){
+      ctx.fillStyle='var(--text2)'; ctx.font='bold 11px Noto Sans KR';
+      ctx.fillText('₩'+(data[i].v/10000).toFixed(0)+'만',p.x,p.y-10);
+    }
+  });
+}
+function drawHeatmap(wrapId) {
+  const wrap=document.getElementById(wrapId); if(!wrap) return;
+  const days=['월','화','수','목','금','토','일'],weeks=['1주','2주','3주','4주'];
+  const vals=Array.from({length:4},()=>Array.from({length:7},()=>Math.floor(Math.random()*80000)));
+  const max=Math.max(...vals.flat());
+  let html='<div class="heatmap">';
+  html+='<div class="heatmap-cell heatmap-label"></div>';
+  days.forEach(d=>html+=`<div class="heatmap-cell heatmap-label" style="justify-content:center">${d}</div>`);
+  weeks.forEach((w,i)=>{
+    html+=`<div class="heatmap-cell heatmap-label">${w}</div>`;
+    vals[i].forEach(v=>{
+      const a=(0.1+(v/max)*.85).toFixed(2);
+      html+=`<div class="heatmap-cell" style="background:rgba(193,122,58,${a})" title="₩${v.toLocaleString()}"></div>`;
+    });
+  });
+  wrap.innerHTML=html+'</div>';
+}
+function drawBudgetCompare(wrapId) {
+  const wrap=document.getElementById(wrapId); if(!wrap) return;
+  const budgets=[{cat:'food',budget:200000},{cat:'grocery',budget:300000},
+                 {cat:'clothing',budget:100000},{cat:'beauty',budget:80000}];
+  const actuals={};
+  transactions.forEach(t=>{actuals[t.cat]=(actuals[t.cat]||0)+t.amount;});
+  wrap.innerHTML=budgets.map(b=>{
+    const actual=actuals[b.cat]||0,pct=Math.min((actual/b.budget)*100,150),over=actual>b.budget;
+    const cat=getCat(b.cat);
+    return `<div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <span style="font-size:13px">${cat.emoji} ${cat.name}</span>
+        <span style="font-size:12px;color:${over?'var(--danger)':'var(--success)'};font-weight:600">
+          ₩${actual.toLocaleString()} / ₩${b.budget.toLocaleString()}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${pct}%;background:${over?'var(--danger)':'var(--success)'}"></div>
+      </div>
+      ${over?`<div style="font-size:11px;color:var(--danger);margin-top:3px">예산 초과 ₩${(actual-b.budget).toLocaleString()}</div>`:''}
+    </div>`;
+  }).join('');
+}
+function drawWeeklyPattern(wrapId) {
+  const wrap=document.getElementById(wrapId); if(!wrap) return;
+  const days=['월','화','수','목','금','토','일'];
+  const amounts=[45000,32000,58000,29000,87000,112000,76000];
+  const max=Math.max(...amounts);
+  wrap.innerHTML=`<div class="bar-chart" style="height:100px">${days.map((d,i)=>`
+    <div class="bar-col">
+      <div class="bar-val">₩${(amounts[i]/1000).toFixed(0)}K</div>
+      <div class="bar-fill" style="height:${(amounts[i]/max)*100}%;background:${amounts[i]>80000?'var(--danger)':'var(--accent)'}"></div>
+      <div class="bar-label">${d}</div>
+    </div>`).join('')}</div>`;
+}
+
+// ═══════════════════════════
+// STATS PAGE
+// ═══════════════════════════
+function initStatsPage() {
+  const dd=getDonutData();
+  const total=dd.reduce((s,d)=>s+d.value,0);
+  drawDonut('donut-stats','donut-stats-legend',dd);
+  const st=document.getElementById('stats-total');
+  if(st) st.textContent='₩'+(total/1000).toFixed(0)+'K';
+  drawBarChart('stats-bar-wrap',[
+    {l:'1주',v:198000},{l:'2주',v:221000},{l:'3주',v:187000},{l:'4주',v:236000}
+  ],['var(--accent)','var(--accent2)','var(--accent)','var(--accent2)']);
+  drawLineChart('line-chart',[
+    {l:'9월',v:680000},{l:'10월',v:720000},{l:'11월',v:695000},
+    {l:'12월',v:810000},{l:'1월',v:749700},{l:'2월',v:842500}
+  ]);
+  drawHeatmap('heatmap-wrap');
+}
+function setPeriod(period,el) {
+  document.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const m={week:.25,month:1,last:.95,quarter:3.1,year:11.5};
+  const dd=getDonutData().map(d=>({...d,value:d.value*(m[period]||1)}));
+  const total=dd.reduce((s,d)=>s+d.value,0);
+  const st=document.getElementById('stats-total');
+  if(st) st.textContent='₩'+(total/1000).toFixed(0)+'K';
+  drawDonut('donut-stats','donut-stats-legend',dd);
+}
+
+// ═══════════════════════════
+// RECURRING
+// ═══════════════════════════
+function renderRecurringList() {
+  const list=document.getElementById('recurring-list'); if(!list) return;
+  const total=recurringList.filter(r=>r.status==='active').reduce((s,r)=>s+r.amount,0);
+  const rt=document.getElementById('recurring-total');
+  if(rt) rt.textContent='₩'+total.toLocaleString();
+  list.innerHTML=recurringList.map(r=>{
+    const cat=getCat(r.cat);
+    return `<li class="recurring-item">
+      <div class="tx-icon" style="background:${cat.bg}">${cat.emoji}</div>
+      <div class="recurring-info">
+        <div class="recurring-name">${r.name}
+          <span class="status-badge ${r.status==='active'?'status-active':'status-paused'}">${r.status==='active'?'활성':'일시정지'}</span>
+        </div>
+        <div class="recurring-meta">매월 ${r.day}일 · ${cat.name}</div>
+      </div>
+      <div class="recurring-amount">₩${r.amount.toLocaleString()}</div>
+      <div style="display:flex;gap:8px;margin-left:12px;flex-shrink:0">
+        <button class="btn btn-ghost btn-sm" onclick="toggleRecurring(${r.id})">${r.status==='active'?'일시정지':'재개'}</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDeleteRecurring(${r.id})">삭제</button>
+      </div>
+    </li>`;
+  }).join('');
+}
+function toggleRecurring(id) {
+  const r=recurringList.find(r=>r.id===id);
+  if(r){ r.status=r.status==='active'?'paused':'active'; saveRec(); renderRecurringList(); }
+}
+function confirmDeleteRecurring(id) {
+  const r=recurringList.find(r=>r.id===id);
+  showDialog({
+    icon:'🗑️', title:'정기 지출 삭제',
+    message:`"${r?.name}"을(를) 삭제할까요?\n이 작업은 되돌릴 수 없어요.`,
+    buttons:[
+      {label:'취소',style:'ghost',action:()=>{}},
+      {label:'삭제',style:'danger',action:()=>{
+        recurringList=recurringList.filter(r=>r.id!==id);
+        saveRec(); renderRecurringList(); showToast('🗑️ 삭제됐어요');
+      }},
+    ]
+  });
+}
+function saveRecurring() {
+  const name=document.getElementById('r-name').value.trim();
+  const amount=parseInt(document.getElementById('r-amount').value);
+  const day=parseInt(document.getElementById('r-day').value);
+  const cycle=document.getElementById('r-cycle').value;
+  if(!name||!amount||!day){ showToast('⚠️ 모든 항목을 입력해주세요'); return; }
+  recurringList.unshift({id:nextId++,name,amount,cat:selectedCat,day,cycle,status:'active'});
+  saveRec(); closeModal('recurring-modal'); renderRecurringList(); showToast('✅ 등록됐어요');
+}
+
+// ═══════════════════════════
+// AI ANALYSIS
+// ═══════════════════════════
+async function runAIAnalysis() {
+  const btn=document.getElementById('ai-analyze-btn');
+  btn.textContent='분석 중...'; btn.disabled=true;
+  const s=document.getElementById('ai-summary');
+  const w=document.getElementById('ai-warnings');
+  const t=document.getElementById('ai-tips');
+  s.innerHTML='<div class="ai-loading">분석 중 <span class="dots"><span>.</span><span>.</span><span>.</span></span></div>';
+  w.innerHTML=''; t.innerHTML='';
+  const bycat={};
+  transactions.forEach(tx=>{bycat[tx.cat]=(bycat[tx.cat]||0)+tx.amount;});
+  const total=Object.values(bycat).reduce((a,b)=>a+b,0);
+  const topCat=Object.entries(bycat).sort((a,b)=>b[1]-a[1]);
+  const budgets={food:200000,grocery:300000,clothing:100000,beauty:80000,offering:200000,transport:100000,health:80000,sub:60000,shopping:100000,edu:80000};
+  const over=topCat.filter(([cat,amt])=>budgets[cat]&&amt>budgets[cat]);
+  const statsText=topCat.map(([cat,amt])=>{
+    const c=getCat(cat); return `${c.name}: ₩${amt.toLocaleString()} (${((amt/total)*100).toFixed(1)}%)`;
+  }).join(', ');
+  const prompt=`당신은 가계 재무 분석 전문가입니다.
+총 지출: ₩${total.toLocaleString()}
+카테고리별: ${statsText}
+지난 달 대비: +12.4% 증가
+예산 초과 항목: ${over.map(([c])=>getCat(c).name).join(', ')||'없음'}
+다음 3가지를 한국어로 분석하세요. JSON만 반환:
+{"summary":"2-3문장 요약","warnings":["경고1","경고2","경고3"],"tips":["팁1","팁2","팁3"]}`;
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,
+                           messages:[{role:'user',content:prompt}]})
+    });
+    const data=await res.json();
+    const parsed=JSON.parse((data.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
+    s.innerHTML=`<div class="ai-text">${parsed.summary}</div>`;
+    w.innerHTML=parsed.warnings.map(x=>`<div class="ai-alert">⚠️ ${x}</div>`).join('');
+    t.innerHTML=parsed.tips.map(x=>`<div class="ai-tip">💡 ${x}</div>`).join('');
+  } catch {
+    s.innerHTML=`<div class="ai-text">이번 달 총 ₩${total.toLocaleString()}을 지출했습니다. 외식비와 의류·미용 비용이 전체의 상당 부분을 차지하며, 지난 달 대비 12.4% 증가했습니다.</div>`;
+    w.innerHTML=over.map(([cat,amt])=>{
+      const c=getCat(cat),ov=amt-(budgets[cat]||0);
+      return `<div class="ai-alert">⚠️ ${c.emoji} ${c.name} ₩${amt.toLocaleString()} — 예산 ₩${ov.toLocaleString()} 초과</div>`;
+    }).join('')||'<div class="ai-text" style="opacity:.6">예산 초과 항목 없음</div>';
+    t.innerHTML=['💄 미용 구매 전 목록 작성 → 월 ₩20,000 절약 가능',
+                 '🍱 배달 대신 밀키트 이용 → 월 ₩40,000 절감',
+                 '🛒 장보기 전 목록 작성 → 충동구매 20~30% 감소']
+      .map(x=>`<div class="ai-tip">💡 ${x}</div>`).join('');
+  }
+  drawBudgetCompare('budget-compare-wrap');
+  drawWeeklyPattern('weekly-pattern-wrap');
+  btn.textContent='✨ 재분석'; btn.disabled=false;
+}
+
+// ═══════════════════════════
+// MODALS
+// ═══════════════════════════
+function openInputModal() {
+  setTodayDate();
+  ['m-amount','m-name','m-memo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m-sug-bar').innerHTML='';
+  selectedCat='etc'; initCatGrid('m-cat-grid');
+  openModal('input-modal');
+}
+function openRecurringModal() {
+  ['r-name','r-amount','r-day'].forEach(id=>document.getElementById(id).value='');
+  selectedCat='sub'; initCatGrid('r-cat-grid','sub');
+  openModal('recurring-modal');
+}
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+// ═══════════════════════════
+// INIT
+// ═══════════════════════════
+function init() {
+  const now=new Date();
+  document.getElementById('topbar-date').textContent=`${now.getFullYear()}년 ${now.getMonth()+1}월`;
+  initCatGrid('cat-grid');
+  setTodayDate();
+  refreshDashboard();
+}
+init();
+</script>
+</body>
+</html>
